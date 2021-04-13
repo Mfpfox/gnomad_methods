@@ -67,20 +67,17 @@ def generic_field_check(
         ht_count = ht.count()
 
     if n_fail is None and cond_expr:
-        ht_filter = ht.filter(cond_expr)
-        n_fail = ht_filter.count()
+        n_fail = ht.filter(cond_expr).count()
 
     if n_fail > 0:
         logger.info(f"Found {n_fail} sites that fail {check_description} check:")
         if show_percent_sites:
             logger.info(f"Percentage of sites that fail: {n_fail / ht_count}")
-        ht = ht.filter(cond_expr).flatten()
-        ht.select("locus", "alleles", *hl.eval(display_fields)).show()
+        ht.select(**display_fields).show()
     else:
         logger.info(f"PASSED {check_description} check")
         if verbose:
-            ht = ht.flatten()
-            ht.select(*display_fields).show()
+            ht.select(**display_fields).show()
 
 
 def make_filters_sanity_check_expr(
