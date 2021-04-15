@@ -10,30 +10,9 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
-def generic_field_check_expr(cond_expr: hl.expr.BooleanExpression) -> hl.Expression:
-    """
-    Check a generic logical condition involving annotations in a Hail Table and print the results to terminal.
-
-    Displays the number of rows (and percent of rows, if `show_percent_sites` is True) in the Table that match the `cond_expr` and fail to be the desired condition (`check_description`).
-    If the number of rows that match the `cond_expr` is 0, then the Table passes that check; otherwise, it fails.
-
-    .. note::
-
-        `cond_expr` and `check_description` are opposites and should never be the same.
-        E.g., If `cond_expr` filters for instances where the raw AC is less than adj AC,
-        then it is checking sites that fail to be the desired condition (`check_description`)
-        of having a raw AC greater than or equal to the adj AC.
-
-    :param ht: Table containing annotations to be checked.
-    :param cond_expr: Logical expression referring to annotations in ht to be checked.
-    :return: None
-    """
-    return hl.agg.filter(cond_expr, hl.agg.count())
-
-
 def generic_field_check(
     ht: hl.Table,
-    cond_expr: hl.BooleanExpression,
+    cond_expr: hl.expr.BooleanExpression,
     check_description: str,
     display_fields: List[str],
     verbose: bool = False,
@@ -55,6 +34,7 @@ def generic_field_check(
         of having a raw AC greater than or equal to the adj AC.
 
     :param ht: Table containing annotations to be checked.
+    :param cond_expr: Logical expression referring to annotations in ht to be checked.
     :param check_description: String describing the condition being checked; is displayed in terminal summary message.
     :param display_fields: List of names of ht annotations to be displayed in case of failure (for troubleshooting purposes);
         these fields are also displayed if verbose is True.
@@ -175,9 +155,10 @@ def sample_sum_check(
                     f"{prefix}{subfield}_{group} = sum({subfield}_{group}_{alt_groups})": hl.struct(
                         cond_expr=ht.info[f"{prefix}{subfield}_{group}"]
                         != ht[f"sum_{subfield}_{group}_{alt_groups}"],
-                        n_fail=generic_field_check_expr(
+                        n_fail=hl.agg.filter(
                             ht.info[f"{prefix}{subfield}_{group}"]
-                            != ht[f"sum_{subfield}_{group}_{alt_groups}"]
+                            != ht[f"sum_{subfield}_{group}_{alt_groups}"],
+                            hl.agg.count(),
                         ),
                         display_fields=[
                             f"info.{prefix}{subfield}_{group}",
@@ -192,9 +173,10 @@ def sample_sum_check(
                     f"{prefix}{subfield}_{subpop}_{group} = sum({subfield}_{group}_{alt_groups})": hl.struct(
                         cond_expr=ht.info[f"{prefix}{subfield}_{group}"]
                         != ht[f"sum_{subfield}_{group}_{alt_groups}"],
-                        n_fail=generic_field_check_expr(
+                        n_fail=hl.agg.filter(
                             ht.info[f"{prefix}{subfield}_{subpop}_{group}"]
-                            != ht[f"sum_{subfield}_{group}_{alt_groups}"]
+                            != ht[f"sum_{subfield}_{group}_{alt_groups}"],
+                            hl.agg.count(),
                         ),
                         display_fields=[
                             f"info.{prefix}{subfield}_{subpop}_{group}",
